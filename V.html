@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Deals Hub</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,sans-serif}
+
+body{
+    background:linear-gradient(to right,#eef2f3,#ffffff);
+}
+
+/* NAVBAR */
+.navbar{
+    position:sticky;
+    top:0;
+    background:rgba(255,255,255,0.8);
+    backdrop-filter:blur(10px);
+    display:flex;
+    justify-content:space-between;
+    padding:10px;
+    z-index:10;
+}
+
+.logo{font-weight:bold}
+.search{
+    width:60%;
+    padding:8px;
+    border-radius:20px;
+    border:1px solid #ddd;
+}
+
+/* FILTER */
+.filters{
+    display:flex;
+    overflow-x:auto;
+    padding:10px;
+}
+.filter-btn{
+    padding:6px 12px;
+    margin-right:8px;
+    background:#eee;
+    border-radius:20px;
+    cursor:pointer;
+    font-size:12px;
+}
+
+/* GRID */
+.container{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+    gap:15px;
+    padding:15px;
+}
+
+/* CARD */
+.card{
+    background:white;
+    border-radius:15px;
+    overflow:hidden;
+    transition:.3s;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+}
+.card:hover{transform:translateY(-6px)}
+
+.card img{
+    width:100%;
+    height:140px;
+    object-fit:cover;
+}
+
+.card-content{padding:10px}
+
+.card h4{font-size:14px;margin-bottom:5px}
+
+.price{color:#27ae60;font-weight:bold}
+
+.btn{
+    display:block;
+    margin-top:8px;
+    padding:8px;
+    text-align:center;
+    border-radius:8px;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:white;
+    text-decoration:none;
+    font-size:13px;
+}
+
+/* LOAD MORE */
+#loadMore{
+    display:block;
+    margin:20px auto;
+    padding:10px 20px;
+    border:none;
+    border-radius:20px;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    color:white;
+    cursor:pointer;
+}
+
+/* ADMIN BUTTON */
+.admin-btn{
+    position:fixed;
+    bottom:15px;
+    right:15px;
+    padding:10px;
+    border:none;
+    border-radius:50%;
+    background:#000;
+    color:#fff;
+    cursor:pointer;
+}
+
+/* ADMIN PANEL */
+.admin{
+    position:fixed;
+    bottom:0;
+    width:100%;
+    background:#fff;
+    padding:10px;
+    display:none;
+    box-shadow:0 -5px 15px rgba(0,0,0,0.2);
+}
+
+.admin input{
+    width:18%;
+    padding:6px;
+    margin:3px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="logo">🔥 Deals</div>
+    <input class="search" placeholder="Search..." onkeyup="searchProducts(this.value)">
+</div>
+
+<!-- FILTER -->
+<div class="filters">
+    <div class="filter-btn" onclick="filterCategory('all')">All</div>
+    <div class="filter-btn" onclick="filterCategory('audio')">Audio</div>
+    <div class="filter-btn" onclick="filterCategory('gadgets')">Gadgets</div>
+    <div class="filter-btn" onclick="filterCategory('accessories')">Accessories</div>
+</div>
+
+<!-- PRODUCTS -->
+<div class="container" id="products"></div>
+
+<button id="loadMore">Load More 🔥</button>
+
+<!-- ADMIN BUTTON -->
+<button class="admin-btn" onclick="openAdmin()">⚙️</button>
+
+<!-- ADMIN PANEL -->
+<div class="admin" id="adminPanel">
+    <input placeholder="Name" id="name">
+    <input placeholder="Price" id="price">
+    <input placeholder="Image URL" id="img">
+    <input placeholder="Affiliate Link" id="link">
+    <input placeholder="Category" id="cat">
+    <button onclick="addProduct()">Add</button>
+</div>
+
+<script>
+
+/* 🔐 PASSWORD */
+const ADMIN_PASSWORD = "1234";
+
+/* DATA */
+let products = JSON.parse(localStorage.getItem("products")) || [
+
+/* SAMPLE AUTO PRODUCTS */
+...Array(40).fill().map((_,i)=>({
+    name:"Trending Product "+(i+1),
+    price:Math.floor(Math.random()*1000)+200,
+    cat:["audio","gadgets","accessories"][i%3],
+    img:"https://via.placeholder.com/200",
+    link:"#"
+}))
+];
+
+let filtered = products;
+let visibleCount = 20;
+
+/* ADMIN ACCESS */
+function openAdmin(){
+    let pass = prompt("Enter Admin Password:");
+    if(pass === ADMIN_PASSWORD){
+        document.getElementById("adminPanel").style.display="block";
+    } else {
+        alert("Wrong password");
+    }
+}
+
+/* ADD PRODUCT */
+function addProduct(){
+    const p={
+        name:name.value,
+        price:price.value,
+        img:img.value,
+        link:link.value,
+        cat:cat.value
+    };
+
+    products.unshift(p);
+    localStorage.setItem("products",JSON.stringify(products));
+
+    name.value=price.value=img.value=link.value=cat.value="";
+    renderProducts();
+}
+
+/* RENDER */
+function renderProducts(){
+    const container=document.getElementById("products");
+    container.innerHTML="";
+
+    filtered.slice(0,visibleCount).forEach(p=>{
+        container.innerHTML+=`
+        <div class="card">
+            <img src="${p.img}">
+            <div class="card-content">
+                <h4>${p.name}</h4>
+                <div class="price">₹${p.price}</div>
+                <a href="${p.link}" target="_blank" class="btn">Buy Now</a>
+            </div>
+        </div>`;
+    });
+
+    document.getElementById("loadMore").style.display =
+        visibleCount >= filtered.length ? "none" : "block";
+}
+
+/* LOAD MORE */
+document.getElementById("loadMore").onclick=()=>{
+    visibleCount+=20;
+    renderProducts();
+};
+
+/* SEARCH */
+function searchProducts(text){
+    visibleCount=20;
+    filtered=products.filter(p=>
+        p.name.toLowerCase().includes(text.toLowerCase())
+    );
+    renderProducts();
+}
+
+/* FILTER */
+function filterCategory(cat){
+    visibleCount=20;
+    if(cat==="all") filtered=products;
+    else filtered=products.filter(p=>p.cat===cat);
+    renderProducts();
+}
+
+/* INIT */
+renderProducts();
+
+</script>
+
+</body>
+</html>
